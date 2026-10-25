@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
+import { getCurrentUser } from "@/server/auth/current-user";
+import { err401 } from "@/server/lib/errors";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/v1/roblox/oauth/authorize — memulai alur OAuth 2.0 (Authorization Code + PKCE). */
 export async function GET(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "TUTOR") return err401();
+
   const origin = new URL(req.url).origin;
 
   if (process.env.NEXT_PUBLIC_USE_MOCK !== "false") {
-    // Mode mock: langsung lompat ke callback seolah tutor sudah klik "Allow" di Roblox
     return NextResponse.redirect(`${origin}/api/v1/roblox/oauth/callback?code=mock_code&state=mock`);
   }
 

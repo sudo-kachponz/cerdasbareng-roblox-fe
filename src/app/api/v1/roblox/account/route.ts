@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import { getLink, unlinkAccount } from "@/lib/mock-db";
+import { getCurrentUser } from "@/server/auth/current-user";
+import * as mock from "@/lib/mock-db";
+import * as svc from "@/server/services/roblox-account";
+import { err401 } from "@/server/lib/errors";
 
 export const dynamic = "force-dynamic";
+const useMock = () => process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
-/** GET  /api/v1/roblox/account — status tautan akun Roblox tutor yang sedang login */
 export async function GET() {
-  return NextResponse.json(getLink());
+  const user = await getCurrentUser();
+  if (!user || user.role !== "TUTOR") return err401();
+  const link = useMock() ? mock.getLink() : await svc.getLink(user.id);
+  return NextResponse.json(link);
 }
 
-/** DELETE /api/v1/roblox/account — unlink (produksi: revoke token di Roblox juga) */
 export async function DELETE() {
-  return NextResponse.json(unlinkAccount());
+  const user = await getCurrentUser();
+  if (!user || user.role !== "TUTOR") return err401();
+  const link = useMock() ? mock.unlinkAccount() : await svc.unlinkAccount(user.id);
+  return NextResponse.json(link);
 }
